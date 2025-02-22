@@ -1,35 +1,31 @@
-import { Button, Form, FormButtons, SubmitButton } from 'react-basics';
-import useApi from 'components/hooks/useApi';
-import useMessages from 'components/hooks/useMessages';
+import { useApi, useMessages, useModified } from '@/components/hooks';
+import ConfirmationForm from '@/components/common/ConfirmationForm';
 
 export function UserDeleteForm({ userId, username, onSave, onClose }) {
-  const { formatMessage, FormattedMessage, labels, messages } = useMessages();
+  const { messages, labels, formatMessage } = useMessages();
   const { del, useMutation } = useApi();
   const { mutate, error, isPending } = useMutation({ mutationFn: () => del(`/users/${userId}`) });
+  const { touch } = useModified();
 
-  const handleSubmit = async (data: any) => {
-    mutate(data, {
+  const handleConfirm = async () => {
+    mutate(null, {
       onSuccess: async () => {
-        onSave();
-        onClose();
+        touch('users');
+        onSave?.();
+        onClose?.();
       },
     });
   };
 
   return (
-    <Form onSubmit={handleSubmit} error={error}>
-      <p>
-        <FormattedMessage {...messages.confirmDelete} values={{ target: <b>{username}</b> }} />
-      </p>
-      <FormButtons flex>
-        <SubmitButton variant="danger" disabled={isPending}>
-          {formatMessage(labels.delete)}
-        </SubmitButton>
-        <Button disabled={isPending} onClick={onClose}>
-          {formatMessage(labels.cancel)}
-        </Button>
-      </FormButtons>
-    </Form>
+    <ConfirmationForm
+      message={formatMessage(messages.confirmDelete, { target: <b>{username}</b> })}
+      onConfirm={handleConfirm}
+      onClose={onClose}
+      buttonLabel={formatMessage(labels.delete)}
+      isLoading={isPending}
+      error={error}
+    />
   );
 }
 

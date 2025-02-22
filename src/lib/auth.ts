@@ -1,40 +1,83 @@
+import bcrypt from 'bcryptjs';
 import { Report } from '@prisma/client';
+import redis from '@/lib/redis';
 import debug from 'debug';
-import redis from '@umami/redis-client';
-import { PERMISSIONS, ROLE_PERMISSIONS, SHARE_TOKEN_HEADER } from 'lib/constants';
-import { secret } from 'lib/crypto';
-import { createSecureToken, ensureArray, getRandomChars, parseToken } from 'next-basics';
-import { findTeamWebsiteByUserId, getTeamUser, getTeamWebsite } from 'queries';
-import { loadWebsite } from './load';
+import { PERMISSIONS, ROLE_PERMISSIONS, ROLES, SHARE_TOKEN_HEADER } from '@/lib/constants';
+import { secret, getRandomChars } from '@/lib/crypto';
+import { createSecureToken, parseSecureToken, parseToken } from '@/lib/jwt';
+import { ensureArray } from '@/lib/utils';
+import { getTeamUser, getUser, getWebsite } from '@/queries';
 import { Auth } from './types';
-import { NextApiRequest } from 'next';
 
 const log = debug('umami:auth');
 const cloudMode = process.env.CLOUD_MODE;
+const SALT_ROUNDS = 10;
+
+export function hashPassword(password: string, rounds = SALT_ROUNDS) {
+  return bcrypt.hashSync(password, rounds);
+}
+
+export function checkPassword(password: string, passwordHash: string) {
+  return bcrypt.compareSync(password, passwordHash);
+}
+
+export async function checkAuth(request: Request) {
+  const token = request.headers.get('authorization')?.split(' ')?.[1];
+  const payload = parseSecureToken(token, secret());
+  const shareToken = await parseShareToken(request.headers);
+
+  let user = null;
+  const { userId, authKey, grant } = payload || {};
+
+  if (userId) {
+    user = await getUser(userId);
+  } else if (redis.enabled && authKey) {
+    const key = await redis.client.get(authKey);
+
+    if (key?.userId) {
+      user = await getUser(key.userId);
+    }
+  }
+
+  if (process.env.NODE_ENV === 'development') {
+    log('checkAuth:', { token, shareToken, payload, user, grant });
+  }
+
+  if (!user?.id && !shareToken) {
+    log('checkAuth: User not authorized');
+    return null;
+  }
+
+  if (user) {
+    user.isAdmin = user.role === ROLES.admin;
+  }
+
+  return {
+    user,
+    grant,
+    token,
+    shareToken,
+    authKey,
+  };
+}
 
 export async function saveAuth(data: any, expire = 0) {
   const authKey = `auth:${getRandomChars(32)}`;
 
-  await redis.client.set(authKey, data);
+  if (redis.enabled) {
+    await redis.client.set(authKey, data);
 
-  if (expire) {
-    await redis.client.expire(authKey, expire);
+    if (expire) {
+      await redis.client.expire(authKey, expire);
+    }
   }
 
   return createSecureToken({ authKey }, secret());
 }
 
-export function getAuthToken(req: NextApiRequest) {
+export function parseShareToken(headers: Headers) {
   try {
-    return req.headers.authorization.split(' ')[1];
-  } catch {
-    return null;
-  }
-}
-
-export function parseShareToken(req: Request) {
-  try {
-    return parseToken(req.headers[SHARE_TOKEN_HEADER], secret());
+    return parseToken(headers.get(SHARE_TOKEN_HEADER), secret());
   } catch (e) {
     log(e);
     return null;
@@ -50,13 +93,19 @@ export async function canViewWebsite({ user, shareToken }: Auth, websiteId: stri
     return true;
   }
 
-  const website = await loadWebsite(websiteId);
+  const website = await getWebsite(websiteId);
 
-  if (user.id === website?.userId) {
-    return true;
+  if (website.userId) {
+    return user.id === website.userId;
   }
 
-  return !!(await findTeamWebsiteByUserId(websiteId, user.id));
+  if (website.teamId) {
+    const teamUser = await getTeamUser(website.teamId, user.id);
+
+    return !!teamUser;
+  }
+
+  return false;
 }
 
 export async function canViewAllWebsites({ user }: Auth) {
@@ -80,9 +129,43 @@ export async function canUpdateWebsite({ user }: Auth, websiteId: string) {
     return true;
   }
 
-  const website = await loadWebsite(websiteId);
+  const website = await getWebsite(websiteId);
 
-  return user.id === website?.userId;
+  if (website.userId) {
+    return user.id === website.userId;
+  }
+
+  if (website.teamId) {
+    const teamUser = await getTeamUser(website.teamId, user.id);
+
+    return teamUser && hasPermission(teamUser.role, PERMISSIONS.websiteUpdate);
+  }
+
+  return false;
+}
+
+export async function canTransferWebsiteToUser({ user }: Auth, websiteId: string, userId: string) {
+  const website = await getWebsite(websiteId);
+
+  if (website.teamId && user.id === userId) {
+    const teamUser = await getTeamUser(website.teamId, userId);
+
+    return teamUser && hasPermission(teamUser.role, PERMISSIONS.websiteTransferToUser);
+  }
+
+  return false;
+}
+
+export async function canTransferWebsiteToTeam({ user }: Auth, websiteId: string, teamId: string) {
+  const website = await getWebsite(websiteId);
+
+  if (website.userId && website.userId === user.id) {
+    const teamUser = await getTeamUser(teamId, user.id);
+
+    return teamUser && hasPermission(teamUser.role, PERMISSIONS.websiteTransferToTeam);
+  }
+
+  return false;
 }
 
 export async function canDeleteWebsite({ user }: Auth, websiteId: string) {
@@ -90,9 +173,19 @@ export async function canDeleteWebsite({ user }: Auth, websiteId: string) {
     return true;
   }
 
-  const website = await loadWebsite(websiteId);
+  const website = await getWebsite(websiteId);
 
-  return user.id === website?.userId;
+  if (website.userId) {
+    return user.id === website.userId;
+  }
+
+  if (website.teamId) {
+    const teamUser = await getTeamUser(website.teamId, user.id);
+
+    return teamUser && hasPermission(teamUser.role, PERMISSIONS.websiteDelete);
+  }
+
+  return false;
 }
 
 export async function canViewReport(auth: Auth, report: Report) {
@@ -139,14 +232,26 @@ export async function canViewTeam({ user }: Auth, teamId: string) {
   return getTeamUser(teamId, user.id);
 }
 
-export async function canUpdateTeam({ user }: Auth, teamId: string) {
+export async function canUpdateTeam({ user, grant }: Auth, teamId: string) {
   if (user.isAdmin) {
     return true;
+  }
+
+  if (cloudMode) {
+    return !!grant?.find(a => a === PERMISSIONS.teamUpdate);
   }
 
   const teamUser = await getTeamUser(teamId, user.id);
 
   return teamUser && hasPermission(teamUser.role, PERMISSIONS.teamUpdate);
+}
+
+export async function canAddUserToTeam({ user, grant }: Auth) {
+  if (cloudMode) {
+    return !!grant?.find(a => a === PERMISSIONS.teamUpdate);
+  }
+
+  return user.isAdmin;
 }
 
 export async function canDeleteTeam({ user }: Auth, teamId: string) {
@@ -173,24 +278,14 @@ export async function canDeleteTeamUser({ user }: Auth, teamId: string, removeUs
   return teamUser && hasPermission(teamUser.role, PERMISSIONS.teamUpdate);
 }
 
-export async function canDeleteTeamWebsite({ user }: Auth, teamId: string, websiteId: string) {
+export async function canCreateTeamWebsite({ user }: Auth, teamId: string) {
   if (user.isAdmin) {
     return true;
   }
 
-  const teamWebsite = await getTeamWebsite(teamId, websiteId);
+  const teamUser = await getTeamUser(teamId, user.id);
 
-  if (teamWebsite?.website?.userId === user.id) {
-    return true;
-  }
-
-  if (teamWebsite) {
-    const teamUser = await getTeamUser(teamWebsite.teamId, user.id);
-
-    return hasPermission(teamUser.role, PERMISSIONS.teamUpdate);
-  }
-
-  return false;
+  return teamUser && hasPermission(teamUser.role, PERMISSIONS.websiteCreate);
 }
 
 export async function canCreateUser({ user }: Auth) {

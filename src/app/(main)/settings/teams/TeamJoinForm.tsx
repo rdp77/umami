@@ -8,20 +8,19 @@ import {
   Button,
   SubmitButton,
 } from 'react-basics';
-import useApi from 'components/hooks/useApi';
-import useMessages from 'components/hooks/useMessages';
-import { setValue } from 'store/cache';
+import { useApi, useMessages, useModified } from '@/components/hooks';
 
 export function TeamJoinForm({ onSave, onClose }: { onSave: () => void; onClose: () => void }) {
-  const { formatMessage, labels, getMessage } = useMessages();
+  const { formatMessage, labels } = useMessages();
   const { post, useMutation } = useApi();
   const { mutate, error } = useMutation({ mutationFn: (data: any) => post('/teams/join', data) });
   const ref = useRef(null);
+  const { touch } = useModified();
 
-  const handleSubmit = async data => {
+  const handleSubmit = async (data: any) => {
     mutate(data, {
       onSuccess: async () => {
-        setValue('teams:members', Date.now());
+        touch('teams:members');
         onSave?.();
         onClose?.();
       },
@@ -29,7 +28,7 @@ export function TeamJoinForm({ onSave, onClose }: { onSave: () => void; onClose:
   };
 
   return (
-    <Form ref={ref} onSubmit={handleSubmit} error={error && getMessage(error)}>
+    <Form ref={ref} onSubmit={handleSubmit} error={error}>
       <FormRow label={formatMessage(labels.accessCode)}>
         <FormInput name="accessCode" rules={{ required: formatMessage(labels.required) }}>
           <TextField autoComplete="off" />
