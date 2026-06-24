@@ -1,0 +1,518 @@
+# Instincts generated from https://github.com/rdp77/umami
+# Generated: 2026-06-24T21:49:05.008Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: umami-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/rdp77/umami
+---
+
+# Umami Commit Length
+
+## Action
+
+Write moderate-length commit messages (~52 characters)
+
+## Evidence
+
+- Average commit message length: 52 chars
+- Based on 100 commits
+
+---
+id: umami-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/rdp77/umami
+---
+
+# Umami Naming Files
+
+## Action
+
+Use camelCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: camelCase
+
+---
+id: umami-import-alias
+trigger: "when importing modules"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/rdp77/umami
+---
+
+# Umami Import Alias
+
+## Action
+
+Use path aliases (@/, ~/) instead of relative imports
+
+## Evidence
+
+- Import analysis shows alias pattern
+- Example: import { x } from '@/lib/x'
+
+---
+id: umami-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/rdp77/umami
+---
+
+# Umami Export Style
+
+## Action
+
+Prefer mixed exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: mixed
+
+---
+id: umami-arch-type-based
+trigger: "when adding new code"
+confidence: 0.8
+domain: architecture
+source: repo-analysis
+source_repo: https://github.com/rdp77/umami
+---
+
+# Umami Arch Type Based
+
+## Action
+
+Place code in the appropriate type folder (components/, services/, utils/, etc.)
+
+## Evidence
+
+- Type-based module organization detected
+- Folders: app, components, lib, queries
+
+---
+id: umami-test-colocate
+trigger: "when writing tests"
+confidence: 0.85
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/rdp77/umami
+---
+
+# Umami Test Colocate
+
+## Action
+
+Place test file next to the source file (e.g., Button.test.tsx next to Button.tsx)
+
+## Evidence
+
+- Colocated test pattern detected
+- Tests live alongside source files
+
+---
+id: umami-workflow-update-translations
+trigger: "when doing update translations"
+confidence: 0.75
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/rdp77/umami
+---
+
+# Umami Workflow Update Translations
+
+## Action
+
+Follow the update-translations workflow:
+1. Edit or add the appropriate JSON file(s) in public/intl/messages or public/intl/country.
+2. Commit the changes with a message referencing the language and purpose.
+3. Optionally, repeat for multiple languages in separate commits.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~5x per month
+- Files: public/intl/messages/*.json, public/intl/country/*.json
+
+---
+id: umami-workflow-dependency-update
+trigger: "when doing dependency update"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/rdp77/umami
+---
+
+# Umami Workflow Dependency Update
+
+## Action
+
+Follow the dependency-update workflow:
+1. Update package.json with new dependency versions.
+2. Update pnpm-lock.yaml (or equivalent lockfile).
+3. Test the build for compatibility.
+4. Commit both files together.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: package.json, pnpm-lock.yaml
+
+---
+id: umami-workflow-fix-dropdown-ui
+trigger: "when doing fix dropdown ui"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/rdp77/umami
+---
+
+# Umami Workflow Fix Dropdown Ui
+
+## Action
+
+Follow the fix-dropdown-ui workflow:
+1. Edit one or more dropdown-related component files (e.g., WebsiteSelect.tsx, BoardSelect.tsx, etc.).
+2. Adjust properties like maxHeight or pageSize.
+3. Test the dropdown in the UI.
+4. Commit the changes, often touching multiple dropdown components at once.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: src/components/input/*Select.tsx, src/app/(main)/settings/preferences/*.tsx, src/app/(main)/websites/[websiteId]/*/*.tsx
+
+---
+id: umami-workflow-bugfix-single-file
+trigger: "when doing bugfix single file"
+confidence: 0.75
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/rdp77/umami
+---
+
+# Umami Workflow Bugfix Single File
+
+## Action
+
+Follow the bugfix-single-file workflow:
+1. Identify the file with the bug.
+2. Edit the file to fix the issue.
+3. Test the fix locally.
+4. Commit the change.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~5x per month
+- Files: src/components/**/*.tsx, src/lib/**/*.ts, src/queries/**/*.ts
+
+---
+id: umami-instinct-file-naming-camelCase
+trigger: "When creating or renaming a file in the codebase"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: rdp77/umami
+---
+
+# Umami Instinct File Naming CamelCase
+
+## Action
+
+Name the file using camelCase (e.g., websiteSelect.tsx)
+
+## Evidence
+
+- Pattern in namingConventions.files
+- Examples in src/components/input/*Select.tsx
+
+---
+id: umami-instinct-function-naming-camelCase
+trigger: "When defining a function"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: rdp77/umami
+---
+
+# Umami Instinct Function Naming CamelCase
+
+## Action
+
+Name the function using camelCase (e.g., hasBlockedIp)
+
+## Evidence
+
+- Pattern in namingConventions.functions
+- Seen in commit: feat: hasBlockedIp func - replace find with some to check blocked IP
+
+---
+id: umami-instinct-class-naming-PascalCase
+trigger: "When defining a class"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: rdp77/umami
+---
+
+# Umami Instinct Class Naming PascalCase
+
+## Action
+
+Name the class using PascalCase
+
+## Evidence
+
+- Pattern in namingConventions.classes
+
+---
+id: umami-instinct-constant-naming-screaming-snake-case
+trigger: "When defining a constant"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: rdp77/umami
+---
+
+# Umami Instinct Constant Naming Screaming Snake Case
+
+## Action
+
+Name the constant in SCREAMING_SNAKE_CASE
+
+## Evidence
+
+- Pattern in namingConventions.constants
+
+---
+id: umami-instinct-import-alias
+trigger: "When importing modules"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: rdp77/umami
+---
+
+# Umami Instinct Import Alias
+
+## Action
+
+Use import aliases for module paths
+
+## Evidence
+
+- Pattern in importStyle: alias
+
+---
+id: umami-instinct-export-mixed
+trigger: "When exporting modules or functions"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: rdp77/umami
+---
+
+# Umami Instinct Export Mixed
+
+## Action
+
+Use both default and named exports as appropriate
+
+## Evidence
+
+- Pattern in exportStyle: mixed
+
+---
+id: umami-instinct-test-colocation
+trigger: "When adding or updating tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: rdp77/umami
+---
+
+# Umami Instinct Test Colocation
+
+## Action
+
+Colocate test files next to the source files they test
+
+## Evidence
+
+- Pattern in architecture.testLocation: colocated
+
+---
+id: umami-instinct-test-type
+trigger: "When writing tests for UI or API"
+confidence: 0.7
+domain: testing
+source: repo-analysis
+source_repo: rdp77/umami
+---
+
+# Umami Instinct Test Type
+
+## Action
+
+Use Cypress or Playwright for end-to-end and integration tests
+
+## Evidence
+
+- Presence of cypress/ and playwright.config.ts in configFiles
+
+---
+id: umami-instinct-commit-prefix
+trigger: "When making a commit"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: rdp77/umami
+---
+
+# Umami Instinct Commit Prefix
+
+## Action
+
+Start the commit message with a prefix such as fix:, feat:, or refactor:
+
+## Evidence
+
+- Pattern in commits.prefixes
+- Seen in commit: fix: Optimize IP detection logic and add error handling
+
+---
+id: umami-instinct-commit-length
+trigger: "When writing a commit message"
+confidence: 0.7
+domain: git
+source: repo-analysis
+source_repo: rdp77/umami
+---
+
+# Umami Instinct Commit Length
+
+## Action
+
+Keep the commit message concise, ideally around 50 characters
+
+## Evidence
+
+- Pattern in commits.averageLength
+
+---
+id: umami-instinct-update-translations
+trigger: "When someone wants to update, add, or refine translations for supported languages"
+confidence: 0.98
+domain: workflow
+source: repo-analysis
+source_repo: rdp77/umami
+---
+
+# Umami Instinct Update Translations
+
+## Action
+
+Edit or add JSON files in public/intl/messages or public/intl/country, then commit with a message referencing the language and purpose
+
+## Evidence
+
+- Workflow: update-translations
+- Seen in commit: refactor: update Catalan translations for consistency and clarity
+
+---
+id: umami-instinct-dependency-update
+trigger: "When someone wants to update project dependencies for security, bugfixes, or new features"
+confidence: 0.95
+domain: workflow
+source: repo-analysis
+source_repo: rdp77/umami
+---
+
+# Umami Instinct Dependency Update
+
+## Action
+
+Update package.json and pnpm-lock.yaml, test the build, and commit both files together
+
+## Evidence
+
+- Workflow: dependency-update
+- Pattern in files: package.json, pnpm-lock.yaml
+
+---
+id: umami-instinct-fix-dropdown-ui
+trigger: "When someone wants to improve dropdown usability or fix display issues"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: rdp77/umami
+---
+
+# Umami Instinct Fix Dropdown Ui
+
+## Action
+
+Edit dropdown-related component files (e.g., *Select.tsx), adjust properties like maxHeight or pageSize, test in the UI, and commit the changes
+
+## Evidence
+
+- Workflow: fix-dropdown-ui
+- Seen in commit: fix: increase website selector dropdown limit from 10 to 100
+
+---
+id: umami-instinct-bugfix-single-file
+trigger: "When someone wants to fix a minor bug affecting a specific feature or component"
+confidence: 0.85
+domain: workflow
+source: repo-analysis
+source_repo: rdp77/umami
+---
+
+# Umami Instinct Bugfix Single File
+
+## Action
+
+Identify the file with the bug, edit to fix, test locally, and commit the change
+
+## Evidence
+
+- Workflow: bugfix-single-file
+- Seen in commit: fix: include empty or null values
+
+---
+id: umami-instinct-error-handling-try-catch
+trigger: "When handling potential errors in code"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: rdp77/umami
+---
+
+# Umami Instinct Error Handling Try Catch
+
+## Action
+
+Use try-catch blocks for error handling rather than custom error classes or global handlers
+
+## Evidence
+
+- Pattern in errorHandling.style: try-catch
+- Seen in commit: fix: Optimize IP detection logic and add error handling
+
